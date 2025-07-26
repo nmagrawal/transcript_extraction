@@ -1,0 +1,24 @@
+###########################
+# Project-specific .gitignore
+###########################
+
+# Python bytecode and cache
+
+app/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Python environment
+.venv/
+
+.env
+
+# Output folders
+transcripts/
+transcripts.py
+youtube_transcript.py
+
+# Ignore Docker-related files in app
+.dockerignore
