@@ -50,15 +50,15 @@ async def handle_granicus_url(page: 'Page'):
 async def handle_viebit_url(page: 'Page'):
     """Performs the UI trigger sequence for Viebit (Fremont) pages."""
     print("  - Detected Viebit platform. Executing trigger sequence...")
-    await page.locator(".vjs-big-play-button").click(force=True, timeout=20000)
-    await page.locator(".vjs-play-control").click(force=True, timeout=10000)
+    await page.locator(".vjs-big-play-button").click(timeout=10000)
+    await page.locator(".vjs-play-control").click(timeout=10000)
     await page.wait_for_timeout(500)
-    await page.locator("button.vjs-subs-caps-button").click(force=True, timeout=10000)
-    await page.locator('.vjs-menu-item:has-text("English")').click(force=True, timeout=10000)
+    await page.locator("button.vjs-subs-caps-button").click(timeout=10000)
+    await page.locator('.vjs-menu-item:has-text("English")').click(timeout=10000)
 
 async def fetch_transcript_for_url(url: str):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True,args=["--no-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required", "--disable-features=PreloadMediaEngagementData,AutoplayIgnoreWebAudio"], channel="chrome-beta")
+        browser = await p.chromium.launch(headless=True, channel="chrome")
         context = await browser.new_context(viewport={"width": 1280, "height": 800})  # Set a standard viewport size
         page = await context.new_page()
         vtt_future = asyncio.Future()
