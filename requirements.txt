@@ -5,3 +5,4 @@ playwright
 gunicorn
 httpx
 Flask[async]
+requests
