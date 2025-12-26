@@ -7,32 +7,48 @@ import httpx
 
 async def fetch_youtube_transcript(video_id: str):
     """
-    Calls the RapidAPI service to get a transcript for a YouTube video.
+    Calls the RapidAPI yt-api.p.rapidapi.com/subtitles endpoint to get a transcript for a YouTube video.
     """
+    import requests
+
     api_key = os.getenv("RAPIDAPI_KEY")
     if not api_key:
         raise ValueError("RAPIDAPI_KEY environment variable not set.")
 
-    api_url = f"https://youtube-captions.p.rapidapi.com/transcript?videoId={video_id}"
+    url = "https://yt-api.p.rapidapi.com/subtitles"
+    querystring = {"id": video_id}
     headers = {
-        "x-rapidapi-host": "youtube-captions.p.rapidapi.com",
         "x-rapidapi-key": api_key,
+        "x-rapidapi-host": "yt-api.p.rapidapi.com"
     }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(api_url, headers=headers, timeout=30.0)
-        # Raise an exception for bad status codes (4xx or 5xx)
-        response.raise_for_status() 
-        
-        data = response.json()
+    response = requests.get(url, headers=headers, params=querystring, timeout=30)
+    response.raise_for_status()
+    data = response.json()
 
-        # Assuming the API returns a list of caption segments, each with a 'text' key.
-        # We join them together to form the full transcript.
-        if not isinstance(data, list):
-            raise TypeError("Expected a list of captions from the YouTube API.")
-        
-        transcript_lines = [item.get("text", "") for item in data]
-        return "\n".join(transcript_lines)
+    # Find the English or English (auto-generated) subtitle
+    subtitles = data.get("subtitles", [])
+    if not isinstance(subtitles, list):
+        raise TypeError("Expected a list in 'subtitles' from the YouTube API.")
+
+    subtitle_url = None
+    for item in subtitles:
+        lang = item.get("languageName", "")
+        if lang == "English" or lang == "English (auto-generated)":
+            subtitle_url = item.get("url")
+            break
+
+    if not subtitle_url:
+        raise ValueError("No English subtitles found for this video.")
+
+    # Fetch the transcript from the subtitle URL (usually returns .vtt)
+    vtt_response = requests.get(subtitle_url, timeout=30)
+    vtt_response.raise_for_status()
+    vtt_text = vtt_response.text
+
+    # Use parse_vtt from utils to convert VTT to plain text
+    from .utils import parse_vtt
+    return parse_vtt(vtt_text)
 
 async def handle_granicus_url(page: 'Page'):
     """Performs the UI trigger sequence for Granicus (Dublin) pages."""
