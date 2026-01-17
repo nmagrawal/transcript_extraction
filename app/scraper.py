@@ -41,14 +41,33 @@ async def fetch_youtube_transcript(video_id: str):
     if not subtitle_url:
         raise ValueError("No English subtitles found for this video.")
 
-    # Fetch the transcript from the subtitle URL (usually returns .vtt)
+    # Fetch the transcript from the subtitle URL (can be .vtt or .xml)
     vtt_response = requests.get(subtitle_url, timeout=30)
     vtt_response.raise_for_status()
+    content_type = vtt_response.headers.get('Content-Type', '')
     vtt_text = vtt_response.text
 
-    # Use parse_vtt from utils to convert VTT to plain text
-    from .utils import parse_vtt
-    return parse_vtt(vtt_text)
+    # If it's a VTT file, use parse_vtt; if XML, parse XML to plain text
+    if subtitle_url.endswith('.vtt') or 'vtt' in content_type:
+        from .utils import parse_vtt
+        return parse_vtt(vtt_text)
+    elif subtitle_url.endswith('.xml') or 'xml' in content_type or vtt_text.strip().startswith('<?xml'):
+        # Parse XML and extract readable text
+        import xml.etree.ElementTree as ET
+        try:
+            root = ET.fromstring(vtt_text)
+            # YouTube XML subtitles: <transcript><text start="..." dur="...">...</text>...</transcript>
+            lines = []
+            for text_elem in root.findall('.//text'):
+                # Unescape HTML entities
+                import html
+                line = html.unescape(text_elem.text or '')
+                lines.append(line.strip())
+            return '\n'.join(lines)
+        except Exception as e:
+            raise ValueError(f"Failed to parse XML subtitles: {e}")
+    else:
+        raise ValueError("Unknown subtitle format. Cannot parse transcript.")
 
 async def handle_granicus_url(page: 'Page'):
     """Performs the UI trigger sequence for Granicus (Dublin) pages."""
