@@ -82,16 +82,24 @@ async def handle_vimeo_url(page: 'Page'):
     print("  - Detected Vimeo platform. Executing trigger sequence...")
     # Hover and click play button first
     play_button = page.locator('button[data-play-button="true"]')
+    await play_button.scroll_into_view_if_needed(timeout=10000)
     await play_button.click(force=True)
     # Then click the CC (captions) button
     cc_button = page.locator('button[data-cc-button="true"]')
+    await cc_button.scroll_into_view_if_needed(timeout=10000)
     await cc_button.click(force=True)
 
 
 async def fetch_transcript_for_url(url: str):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, channel="chrome")
-        context = await browser.new_context(viewport={"width": 1280, "height": 800})  # Set a standard viewport size
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 800},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            is_mobile=False,
+            device_scale_factor=1.0,
+            has_touch=False
+        )
         page = await context.new_page()
         vtt_future = asyncio.Future()
 
