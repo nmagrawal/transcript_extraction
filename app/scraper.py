@@ -72,28 +72,27 @@ async def fetch_youtube_transcript(video_id: str):
 async def handle_granicus_url(page: 'Page'):
     """Performs the UI trigger sequence for Granicus (Dublin) pages."""
     print("  - Detected Granicus platform. Executing trigger sequence...")
-#    await page.screenshot(path='/app/screenshots/before_click.png')
     await page.locator(".flowplayer").hover(timeout=10000)
-
-
     element = page.locator(".fp-menu").get_by_text("On", exact=True)
     await element.scroll_into_view_if_needed(timeout=10000)
     await element.click(force=True)
-#    await page.screenshot(path='/app/screenshots/after_click.png')
 
+async def handle_vimeo_url(page: 'Page'):
+    """Performs the UI trigger sequence for Vimeo pages."""
+    print("  - Detected Vimeo platform. Executing trigger sequence...")
+    # Hover and click play button first
+    play_button = page.locator('button[data-play-button="true"]')
+    await play_button.scroll_into_view_if_needed(timeout=10000)
+    await play_button.click(force=True)
+    # Then click the CC (captions) button
+    cc_button = page.locator('button[data-cc-button="true"]')
+    await cc_button.scroll_into_view_if_needed(timeout=10000)
+    await cc_button.click(force=True)
 
-async def handle_viebit_url(page: 'Page'):
-    """Performs the UI trigger sequence for Viebit (Fremont) pages."""
-    print("  - Detected Viebit platform. Executing trigger sequence...")
-    await page.locator(".vjs-big-play-button").click(timeout=10000)
-    await page.locator(".vjs-play-control").click(timeout=10000)
-    await page.wait_for_timeout(500)
-    await page.locator("button.vjs-subs-caps-button").click(timeout=10000)
-    await page.locator('.vjs-menu-item:has-text("English")').click(timeout=10000)
 
 async def fetch_transcript_for_url(url: str):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, channel="chrome")
+        browser = await p.chromium.launch(headless=False, channel="chrome")
         context = await browser.new_context(viewport={"width": 1280, "height": 800})  # Set a standard viewport size
         page = await context.new_page()
         vtt_future = asyncio.Future()
@@ -103,20 +102,16 @@ async def fetch_transcript_for_url(url: str):
                 try: vtt_future.set_result(await response.text())
                 except Exception as e:
                     if not vtt_future.done(): vtt_future.set_exception(e)
-        
         page.on("response", handle_response)
         
         try:
-            await page.goto(url, wait_until="load", timeout=45000)
+            await page.goto(url, wait_until="load", timeout=3500)
             if "granicus.com" in url:
                 await handle_granicus_url(page)
-            elif "viebit.com" in url:
-                await handle_viebit_url(page)
-            else:
-                raise ValueError("Unknown platform. Could not process URL.")
+            elif "vimeo.com" in url:
+                await handle_vimeo_url(page)
             
             vtt_content = await asyncio.wait_for(vtt_future, timeout=20)
             return parse_vtt(vtt_content)
         finally:
             await browser.close()
- 
