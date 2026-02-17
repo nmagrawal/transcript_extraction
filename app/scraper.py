@@ -82,11 +82,9 @@ async def handle_vimeo_url(page: 'Page'):
     print("  - Detected Vimeo platform. Executing trigger sequence...")
     # Hover and click play button first
     play_button = page.locator('button[data-play-button="true"]')
-    await play_button.scroll_into_view_if_needed(timeout=10000)
     await play_button.click(force=True)
     # Then click the CC (captions) button
     cc_button = page.locator('button[data-cc-button="true"]')
-    await cc_button.scroll_into_view_if_needed(timeout=10000)
     await cc_button.click(force=True)
 
 
