@@ -92,7 +92,7 @@ async def handle_vimeo_url(page: 'Page'):
 
 async def fetch_transcript_for_url(url: str):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False, channel="chrome")
+        browser = await p.chromium.launch(headless=True, channel="chrome")
         context = await browser.new_context(viewport={"width": 1280, "height": 800})  # Set a standard viewport size
         page = await context.new_page()
         vtt_future = asyncio.Future()
