@@ -111,7 +111,7 @@ async def fetch_transcript_for_url(url: str):
         page.on("response", handle_response)
         
         try:
-            await page.goto(url, wait_until="load", timeout=3500)
+            await page.goto(url, wait_until="load", timeout=20000)
             if "granicus.com" in url:
                 await handle_granicus_url(page)
             elif "vimeo.com" in url:
