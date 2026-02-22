@@ -6,3 +6,4 @@ gunicorn
 httpx
 Flask[async]
 requests
+pymongo
