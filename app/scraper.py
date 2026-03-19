@@ -34,7 +34,9 @@ async def fetch_youtube_transcript(video_id: str):
     subtitle_url = None
     for item in subtitles:
         lang = item.get("languageName", "")
-        if lang == "English" or lang == "English (auto-generated)":
+        print(f"  - Found subtitle: {lang} at {item.get('url')}")
+        # Match any subtitle where 'english' appears in the language name (case-insensitive)
+        if "english" in lang.lower():
             subtitle_url = item.get("url")
             break
 
