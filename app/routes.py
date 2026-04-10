@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify, Response
 # Import all our processing functions
 from .scraper import fetch_transcript_for_url, fetch_youtube_transcript
 from .utils import extract_youtube_video_id
+from .subscription.email_validation import validate_email_address
 
 api_bp = Blueprint('api', __name__)
 
@@ -37,6 +38,27 @@ async def get_transcript():
     except Exception as e:
         print(f"An error occurred while processing {url}: {e}")
         return jsonify({'error': 'Failed to process the transcript.', 'details': str(e)}), 500
+
+
+@api_bp.route('/subscribe', methods=['POST'])
+def subscribe():
+    """A simple endpoint to handle newsletter subscriptions."""
+    if not request.json or 'email' not in request.json:
+        return jsonify({'error': 'Email is required in JSON body'}), 400
+
+    email = request.json['email']
+    # Here you would add logic to save the email to your database or mailing list
+    print(f"Received subscription request for email: {email}")
+
+    validated_email = validate_email_address(email)
+
+
+    if validated_email == email:
+        return jsonify({'message': f'Successfully subscribed {validated_email} to the newsletter!'}), 200
+    else:
+        return jsonify({'error': f'Invalid email address: {validated_email}'}), 400
+    
+    
 
 
 @api_bp.route('/health', methods=['GET'])
