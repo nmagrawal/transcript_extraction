@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify, Response
 from .scraper import fetch_transcript_for_url, fetch_youtube_transcript
 from .utils import extract_youtube_video_id
 from .subscription.email_validation import validate_email_address
+from .subscription.user_checking import subscribe_user_to_newsletter
 
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 api_bp = Blueprint('api', __name__)
@@ -55,9 +56,10 @@ def subscribe():
 
     validated_email = validate_email_address(email)
 
-
     if validated_email == email:
-        return jsonify({'message': f'Successfully subscribed {validated_email} to the newsletter!'}), 200
+        # Email is valid, proceed to subscribe
+        subscribe_result = subscribe_user_to_newsletter(email)
+        return jsonify({'message': f'Successfully subscribed {validated_email} to the newsletter!', 'details': subscribe_result}), 200
     else:
         return jsonify({'error': f'Invalid email address: {validated_email}'}), 400
     
