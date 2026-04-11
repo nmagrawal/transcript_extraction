@@ -1,4 +1,6 @@
+
 import os
+import logging
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
@@ -14,7 +16,8 @@ db = client["opgov-prod"]
 source_col = db["meetings"]
 target_col_name = "speakers_history"
 
-print("Starting smart aggregation (Appending new meetings & updating organizations)...")
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+logging.info("Starting smart aggregation (Appending new meetings & updating organizations)...")
 
 try:
     # 4. Define the Aggregation Pipeline
@@ -122,10 +125,10 @@ try:
     # 5. Run the Pipeline
     source_col.aggregate(pipeline)
     
-    print(f"Success! Checked for new meetings and appended them to '{target_col_name}' safely.")
+    logging.info(f"Success! Checked for new meetings and appended them to '{target_col_name}' safely.")
 
 except Exception as e:
-    print(f"An error occurred: {e}")
+    logging.error(f"An error occurred: {e}")
 
 finally:
     client.close()

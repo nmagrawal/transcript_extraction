@@ -4,6 +4,8 @@ from playwright.async_api import Page, async_playwright
 from .utils import parse_vtt
 import os
 import httpx
+import logging
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
 async def fetch_youtube_transcript(video_id: str):
     """
@@ -34,7 +36,7 @@ async def fetch_youtube_transcript(video_id: str):
     subtitle_url = None
     for item in subtitles:
         lang = item.get("languageName", "")
-        print(f"  - Found subtitle: {lang} at {item.get('url')}")
+        logging.info(f"  - Found subtitle: {lang} at {item.get('url')}")
         # Match any subtitle where 'english' appears in the language name (case-insensitive)
         if "english" in lang.lower():
             subtitle_url = item.get("url")
@@ -73,7 +75,7 @@ async def fetch_youtube_transcript(video_id: str):
 
 async def handle_granicus_url(page: 'Page'):
     """Performs the UI trigger sequence for Granicus (Dublin) pages."""
-    print("  - Detected Granicus platform. Executing trigger sequence...")
+    logging.info("  - Detected Granicus platform. Executing trigger sequence...")
     await page.locator(".flowplayer").hover(timeout=10000)
     element = page.locator(".fp-menu").get_by_text("On", exact=True)
     await element.scroll_into_view_if_needed(timeout=10000)
@@ -81,7 +83,7 @@ async def handle_granicus_url(page: 'Page'):
 
 async def handle_vimeo_url(page: 'Page'):
     """Performs the UI trigger sequence for Vimeo pages."""
-    print("  - Detected Vimeo platform. Executing trigger sequence...")
+    logging.info("  - Detected Vimeo platform. Executing trigger sequence...")
     # Hover and click play button first
     play_button = page.locator('button[data-play-button="true"]')
     await play_button.scroll_into_view_if_needed(timeout=10000)
