@@ -22,3 +22,4 @@ youtube_transcript.py
 
 # Ignore Docker-related files in app
 .dockerignore
+app.log

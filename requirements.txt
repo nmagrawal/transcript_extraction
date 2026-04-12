@@ -7,3 +7,4 @@ httpx
 Flask[async]
 requests
 pymongo
+email-validator
