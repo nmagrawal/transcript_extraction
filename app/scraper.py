@@ -1,7 +1,7 @@
 # app/scraper.py
 import asyncio
 from playwright.async_api import Page, async_playwright
-from .utils import parse_vtt
+from .utils import parse_vtt, parse_srt
 import os
 import httpx
 import logging
@@ -93,6 +93,10 @@ async def handle_vimeo_url(page: 'Page'):
     await cc_button.scroll_into_view_if_needed(timeout=10000)
     await cc_button.click(force=True)
 
+async def handle_civicclerk_url(page: 'Page'):
+    """Performs the UI trigger sequence for CivicClerk pages."""
+    logging.info("  - Detected CivicClerk platform. No explicit UI trigger needed, waiting for SRT.")
+    # CivicClerk seems to load the .srt automatically, so no special clicks needed.
 
 async def fetch_transcript_for_url(url: str):
     async with async_playwright() as p:
@@ -106,21 +110,35 @@ async def fetch_transcript_for_url(url: str):
         )
         page = await context.new_page()
         vtt_future = asyncio.Future()
+        srt_future = asyncio.Future()
 
         async def handle_response(response):
             if ".vtt" in response.url and not vtt_future.done():
                 try: vtt_future.set_result(await response.text())
                 except Exception as e:
                     if not vtt_future.done(): vtt_future.set_exception(e)
+            elif (".srt" in response.url or "text/srt" in response.headers.get('Content-Type', '')) and not srt_future.done():
+                try: srt_future.set_result(await response.text())
+                except Exception as e:
+                    if not srt_future.done(): srt_future.set_exception(e)
         page.on("response", handle_response)
         
         try:
             await page.goto(url, wait_until="load", timeout=20000)
             if "granicus.com" in url:
                 await handle_granicus_url(page)
+                vtt_content = await asyncio.wait_for(vtt_future, timeout=20)
+                return parse_vtt(vtt_content)
             elif "vimeo.com" in url:
                 await handle_vimeo_url(page)
+                vtt_content = await asyncio.wait_for(vtt_future, timeout=20)
+                return parse_vtt(vtt_content)
+            elif "civicclerk.com" in url:
+                await handle_civicclerk_url(page)
+                srt_content = await asyncio.wait_for(srt_future, timeout=20)
+                return parse_srt(srt_content)
             
+            # Default behavior if no specific handler matches and a VTT is found
             vtt_content = await asyncio.wait_for(vtt_future, timeout=20)
             return parse_vtt(vtt_content)
         finally:

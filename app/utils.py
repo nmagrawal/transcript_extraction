@@ -42,3 +42,23 @@ def extract_youtube_video_id(url: str) -> str | None:
         if match:
             return match.group(1)
     return None
+
+def parse_srt(srt_content: str) -> str:
+    """
+    Parses raw SRT content to extract clean subtitle text.
+    """
+    lines = srt_content.strip().split('\n')
+    transcript_lines = []
+    # SRT files have block numbers, timestamps, and then text.
+    # We want to skip block numbers and timestamps.
+    # A simple approach is to look for lines that don't contain "-->" (timestamp indicator)
+    # and are not purely digits (block numbers).
+    
+    for line in lines:
+        if not line.strip() or "-->" in line or line.strip().isdigit():
+            continue
+        cleaned_line = line.strip()
+        if cleaned_line:
+            transcript_lines.append(cleaned_line)
+            
+    return "\n".join(transcript_lines)
